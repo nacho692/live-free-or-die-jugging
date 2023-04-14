@@ -13,23 +13,45 @@ import (
 	"github.com/nacho692/live-free-or-die-jugging/pkg/models"
 )
 
+// SolverFun is a wrapper to simplify the solver interface implementation.
+// go does not allow unnamed function types to implement interfaces.
 type SolverFun func(state models.State, z int) (models.Solution, error)
 
+// Solve just wraps the internal solver solve.
 func (s SolverFun) Solve(state models.State, z int) (models.Solution, error) {
 	return s(state, z)
 }
 
+// Solver must implement a solution to the water jug riddle.
+//
+// The solution must be correct if the initial state parameters are correct.
+//
+// If no solution is found models.ErrNoSolution is expected.
 type Solver interface {
 	Solve(state models.State, z int) (models.Solution, error)
 }
 
+// Configuration is the base configuration for instantiating an interactive App.
 type Configuration struct {
+	// Output allows configuration for the app output, if nil, stdout is used
+	// as default.
 	Output io.Writer
-	Input  io.Reader
+	// Input allows configuration for the app input, if nil, stdin is used as
+	// default.
+	Input io.Reader
+	// Silent configures whether the flavour messages to the user are displayed
+	// or not.
+	// It helps when using the application in an interactive-less way.
+	// As it will only output the solution.
 	Silent bool
+	// Solver must be a valid solver, see Solver for more information.
 	Solver Solver
 }
 
+// App is an interactive application which guides the user through the water
+// jug riddle and then exits.
+//
+// It requires a working Solver.
 type App struct {
 	output         writer
 	input          reader
@@ -37,6 +59,8 @@ type App struct {
 	solver         Solver
 }
 
+// New instantiates a new App.
+// See Configuration for constraints on the input.
 func New(conf Configuration) (App, error) {
 
 	output := conf.Output
@@ -69,6 +93,32 @@ func New(conf Configuration) (App, error) {
 	}, nil
 }
 
+// Run is a blocking operation which expects the x,y,z input on the App input
+// and writes the solution to the App output.
+//
+// The user is expected to write the input and the final input string would look
+// like "x\ny\nz\n" as long as x,y and z are valid.
+//
+// The output varies as messages are written to the user requesting the
+// different parameters.
+//
+// If the App is silent then only the solution output will be written in several
+// lines indicating an action taken and the result of that action, until the
+// solution is found:
+// ACTION  (Fill/TransferTo/Empty; see models.Action)
+// (w_x/x, w_y/y)_1 (current amount of water over max capacity for each jug)
+//
+// Example for 5,4,3:
+// Fill Y
+// (0/5, 4/4)
+// Transfer to X
+// (4/5, 0/4)
+// Fill Y
+// (4/5, 4/4)
+// Transfer to X
+// (5/5, 3/4)
+//
+// If no solution exists, "no solution" is written to the output.
 func (a *App) Run() error {
 
 	err := a.output.Write(welcome)
