@@ -50,74 +50,171 @@ package iterative
 
 import "errors"
 
-type Solution struct {
-	Steps  []State
-	Action []string
-}
+var ErrNoSolution = errors.New("no solution")
 
-type Jug struct {
-	Capacity uint
-	Amount   uint
-}
-
+// State a State indicates the current state of the X and Y Jugs
 type State struct {
 	X Jug
 	Y Jug
 }
 
-func Solve(x, y, z uint) (Solution, error) {
-	if z < x && z < y {
-		return Solution{}, errors.New("z must be smaller than either x or y")
-	}
-	if y == 0 || x == 0 {
-		return Solution{}, errors.New("both y and x must be positive")
-	}
-	s := Solution{}
-	state := State{
-		X: Jug{
-			Capacity: x,
-			Amount:   0,
-		},
-		Y: Jug{
-			Capacity: y,
-			Amount:   0,
-		},
-	}
-	s.Steps = append(s.Steps, state)
-	toTransfer := uint(0)
-
-	visitedStates := map[State]bool{}
-	for state.X.Amount != z && state.Y.Amount != z && !visitedStates[state] {
-
-		visitedStates[state] = true
-
-		if state.Y.Amount == state.Y.Capacity {
-			state.Y.Amount = 0
-			s.Steps = append(s.Steps, state)
-			s.Action = append(s.Action, "Empty Y")
-		}
-
-		if state.X.Amount == 0 {
-			state.X.Amount = state.X.Capacity
-			s.Steps = append(s.Steps, state)
-			s.Action = append(s.Action, "Fill X")
-		}
-
-		toTransfer = min(state.X.Amount, state.Y.Capacity-state.Y.Amount)
-		state.X.Amount -= toTransfer
-		state.Y.Amount += toTransfer
-		s.Steps = append(s.Steps, state)
-		s.Action = append(s.Action, "Transfer to Y")
-	}
-
-	if visitedStates[state] {
-		return Solution{}, errors.New("no solution")
-	}
-
-	return s, nil
+type Step struct {
+	// State indicates the step after the action is taken
+	State State
+	// Action is a user-friendly string indicating the action taken, it is a
+	// free text.
+	Action string
 }
 
-func min(x, y uint) uint {
+type Solution struct {
+	// Steps are the series of steps required to arrive to the solution.
+	Steps []Step
+}
+
+// Jug a Jug carries a certain amount of water.
+type Jug struct {
+	Capacity int
+	Amount   int
+}
+
+type action string
+
+const (
+	transferTo action = "transfer_to"
+	fillTo     action = "fill"
+	emptyFrom  action = "empty"
+)
+
+type step func(act action, from, to Jug)
+
+// Solve solves the water jugs riddle iteratively.
+//
+// An error ErrNoSolution is returned if no solution exists.
+func Solve(baseState State, z int) (Solution, error) {
+
+	x := baseState.X.Capacity
+	y := baseState.Y.Capacity
+	if z > x && z > y {
+		return Solution{}, errors.New("z must be smaller than either x or y")
+	}
+	if z < 0 {
+		return Solution{}, errors.New("z must be zero or greater")
+	}
+	if y <= 0 || x <= 0 {
+		return Solution{}, errors.New("both x and z must be positive")
+	}
+
+	// We derive two solutions, first pouring from X to Y, secondly from Y to X
+	// we keep the minimum of both
+	s1 := Solution{}
+	err := solveFromTo(
+		baseState.X,
+		baseState.Y,
+		// The callback adds a solution step, knowing that the From Jug is X
+		// and the To Jug is Y.
+		func(act action, from, to Jug) {
+			s := Step{
+				State: State{
+					X: from,
+					Y: to,
+				},
+			}
+			switch act {
+			case fillTo:
+				s.Action = "Fill X"
+			case emptyFrom:
+				s.Action = "Empty Y"
+			case transferTo:
+				s.Action = "Transfer To Y"
+			}
+			s1.Steps = append(s1.Steps, s)
+		},
+		z)
+
+	if err != nil {
+		return Solution{}, err
+	}
+
+	s2 := Solution{}
+	err = solveFromTo(
+		baseState.Y,
+		baseState.X,
+		func(act action, from, to Jug) {
+			s := Step{
+				State: State{
+					X: to,
+					Y: from,
+				},
+			}
+			switch act {
+			case fillTo:
+				s.Action = "Fill Y"
+			case emptyFrom:
+				s.Action = "Empty X"
+			case transferTo:
+				s.Action = "Transfer To X"
+			}
+			s2.Steps = append(s2.Steps, s)
+		},
+		z)
+	if err != nil {
+		return Solution{}, err
+	}
+
+	if len(s1.Steps) < len(s2.Steps) {
+		return s1, nil
+	}
+	return s2, nil
+}
+
+// solveFromTo helps abstract the algorithm from the expected Solution format.
+// It solves the water jugs riddle by transfering water from the "from" Jug to
+// the "to" Jug.
+//
+// The idea is to call this method twice, inverting the from and to values.
+//
+// It receives a "step" method which is basically a callback whenever a new step
+// is generated.
+// This callback allows and helps formatting the Solution correctly avoiding too
+// much code repetition.
+func solveFromTo(
+	from Jug, to Jug,
+	newStep step,
+	z int) error {
+
+	toTransfer := 0
+
+	type tuple struct {
+		from, to Jug
+	}
+	visitedTuples := map[tuple]bool{}
+	for from.Amount != z && to.Amount != z && !visitedTuples[tuple{from: from, to: to}] {
+
+		visitedTuples[tuple{from: from, to: to}] = true
+
+		if to.Amount == to.Capacity {
+			to.Amount = 0
+			newStep(emptyFrom, from, to)
+		}
+
+		if from.Amount == 0 {
+			from.Amount = from.Capacity
+			newStep(fillTo, from, to)
+		}
+
+		toTransfer = min(from.Amount, to.Capacity-to.Amount)
+		from.Amount -= toTransfer
+		to.Amount += toTransfer
+		newStep(transferTo, from, to)
+	}
+
+	if visitedTuples[tuple{from: from, to: to}] {
+		return ErrNoSolution
+	}
+	return nil
+}
+
+func min(x, y int) int {
 	if x < y {
 		return x
 	}
