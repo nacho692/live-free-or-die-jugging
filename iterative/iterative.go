@@ -85,7 +85,11 @@ func Solve(x, y, z uint) (Solution, error) {
 	}
 	s.Steps = append(s.Steps, state)
 	toTransfer := uint(0)
-	for state.X.Amount != z && state.Y.Amount != z {
+
+	visitedStates := map[State]bool{}
+	for state.X.Amount != z && state.Y.Amount != z && !visitedStates[state] {
+
+		visitedStates[state] = true
 
 		if state.Y.Amount == state.Y.Capacity {
 			state.Y.Amount = 0
@@ -104,6 +108,10 @@ func Solve(x, y, z uint) (Solution, error) {
 		state.Y.Amount += toTransfer
 		s.Steps = append(s.Steps, state)
 		s.Action = append(s.Action, "Transfer to Y")
+	}
+
+	if visitedStates[state] {
+		return Solution{}, errors.New("no solution")
 	}
 
 	return s, nil
