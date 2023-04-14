@@ -10,9 +10,9 @@ There is have an X-gallon and a Y-gallon jug that you can fill from a lake.
 Measure Z gallons of water using only an X-gallon and Y-gallon jug.
 
 `
-	requestX = `Please insert the value for the "x" jug, remember it must be positive: `
-	requestY = `Please insert the value for the "y" jug, remember it must be positive: `
-	requestZ = `Please insert the value for the "z" jug, it must be smaller than either "x" or "y": `
+	requestX = `Insert the value for the "x" jug, remember it must be positive: `
+	requestY = `Insert the value for the "y" jug, remember it must be positive: `
+	requestZ = `Insert the value for the "z" goal, it must be smaller than either "x" or "y": `
 
 	zSmaller      = "z must be smaller than either x or y"
 	zNegative     = "z must be zero or greater"

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
@@ -10,9 +11,12 @@ import (
 
 func main() {
 
+	silent := flag.Bool("s", false, "silences most output so only the solution is printed")
+	flag.Parse()
+
 	application, err := app.New(app.Configuration{
 		Output: os.Stdout,
-		Input:  os.Stdin,
+		Silent: *silent,
 		Solver: app.SolverFun(iterative.Solve),
 	})
 	if err != nil {

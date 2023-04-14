@@ -45,9 +45,10 @@ func TestRun(t *testing.T) {
 		input := "3\n2\n1\n"
 		output := &bytes.Buffer{}
 		a, err := app.New(app.Configuration{
-			Input:          bytes.NewReader([]byte(input)),
-			SolutionOutput: output,
-			Solver:         app.SolverFun(expected),
+			Input:  bytes.NewReader([]byte(input)),
+			Output: output,
+			Silent: true,
+			Solver: app.SolverFun(expected),
 		})
 		require.NoError(t, err)
 
@@ -55,8 +56,8 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, output.String(),
-			"Fill X \t (3, 0) \n"+
-				"Transfer To Y \t (1, 2) \n")
+			"Fill X \n(3/3, 0/2) \n"+
+				"Transfer to Y \n(1/3, 2/2) \n")
 	})
 
 	t.Run("no solution x=3, y=9, z=4", func(t *testing.T) {
@@ -72,9 +73,10 @@ func TestRun(t *testing.T) {
 		input := "3\n9\n4\n"
 		output := &bytes.Buffer{}
 		a, err := app.New(app.Configuration{
-			Input:          bytes.NewReader([]byte(input)),
-			SolutionOutput: output,
-			Solver:         app.SolverFun(expected),
+			Input:  bytes.NewReader([]byte(input)),
+			Output: output,
+			Silent: true,
+			Solver: app.SolverFun(expected),
 		})
 		require.NoError(t, err)
 

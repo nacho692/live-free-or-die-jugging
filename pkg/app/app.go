@@ -1,4 +1,5 @@
 // Package app implements the main flow for the CLI application
+// It is interactive and can be automated by piping input into the STDIN
 package app
 
 import (
@@ -6,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 
 	"github.com/nacho692/live-free-or-die-jugging/pkg/models"
@@ -22,10 +24,10 @@ type Solver interface {
 }
 
 type Configuration struct {
-	Output         io.Writer
-	Input          io.Reader
-	SolutionOutput io.Writer
-	Solver         Solver
+	Output io.Writer
+	Input  io.Reader
+	Silent bool
+	Solver Solver
 }
 
 type App struct {
@@ -37,16 +39,22 @@ type App struct {
 
 func New(conf Configuration) (App, error) {
 
-	if conf.Output == nil {
-		conf.Output = io.Discard
+	output := conf.Output
+	if output == nil {
+		output = os.Stdout
+	}
+	if conf.Silent {
+		output = io.Discard
 	}
 
-	if conf.SolutionOutput == nil {
-		conf.SolutionOutput = conf.Output
+	solutionOutput := conf.Output
+	if solutionOutput == nil {
+		solutionOutput = os.Stdout
 	}
 
-	if conf.Input == nil {
-		return App{}, errors.New("configuration Input stream must be set")
+	input := conf.Input
+	if input == nil {
+		conf.Input = os.Stdin
 	}
 
 	if conf.Solver == nil {
@@ -55,8 +63,8 @@ func New(conf Configuration) (App, error) {
 
 	return App{
 		input:          reader{bufio.NewReader(conf.Input)},
-		output:         writer{conf.Output},
-		solutionOutput: writer{conf.SolutionOutput},
+		output:         writer{output},
+		solutionOutput: writer{solutionOutput},
 		solver:         conf.Solver,
 	}, nil
 }
@@ -108,8 +116,10 @@ func (a *App) Run() error {
 
 	for _, step := range s.Steps {
 		err = a.solutionOutput.Write(
-			fmt.Sprintf("%s \t (%d, %d) \n",
-				step.Action, step.State.X.Amount, step.State.Y.Amount))
+			fmt.Sprintf("%s \n(%d/%d, %d/%d) \n",
+				step.Action,
+				step.State.X.Amount, step.State.X.Capacity,
+				step.State.Y.Amount, step.State.Y.Capacity))
 		if err != nil {
 			return fmt.Errorf("writing solution to output: %w", err)
 		}
