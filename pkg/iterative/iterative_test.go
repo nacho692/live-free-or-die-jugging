@@ -1,13 +1,12 @@
 package iterative_test
 
 import (
+	"github.com/nacho692/live-free-or-die-jugging/pkg/iterative"
+	"github.com/nacho692/live-free-or-die-jugging/pkg/models"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/nacho692/live-free-or-die-jugging/iterative"
-	"github.com/nacho692/live-free-or-die-jugging/models"
 )
 
 func TestNoSolution(t *testing.T) {

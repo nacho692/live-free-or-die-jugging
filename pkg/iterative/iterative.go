@@ -52,8 +52,7 @@ package iterative
 
 import (
 	"errors"
-
-	"github.com/nacho692/live-free-or-die-jugging/models"
+	"github.com/nacho692/live-free-or-die-jugging/pkg/models"
 )
 
 type action string
