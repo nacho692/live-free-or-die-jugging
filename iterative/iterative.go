@@ -50,15 +50,68 @@ package iterative
 
 import "errors"
 
-type Solution struct{}
+type Solution struct {
+	Steps  []State
+	Action []string
+}
+
+type Jug struct {
+	Capacity uint
+	Amount   uint
+}
+
+type State struct {
+	X Jug
+	Y Jug
+}
 
 func Solve(x, y, z uint) (Solution, error) {
-	if z > x || z > y {
-		return Solution{}, errors.New("z must be smaller than x and y")
+	if z < x && z < y {
+		return Solution{}, errors.New("z must be smaller than either x or y")
 	}
 	if y == 0 || x == 0 {
 		return Solution{}, errors.New("both y and x must be positive")
 	}
+	s := Solution{}
+	state := State{
+		X: Jug{
+			Capacity: x,
+			Amount:   0,
+		},
+		Y: Jug{
+			Capacity: y,
+			Amount:   0,
+		},
+	}
+	s.Steps = append(s.Steps, state)
+	toTransfer := uint(0)
+	for state.X.Amount != z && state.Y.Amount != z {
 
-	return Solution{}, errors.New("unimplemented")
+		if state.Y.Amount == state.Y.Capacity {
+			state.Y.Amount = 0
+			s.Steps = append(s.Steps, state)
+			s.Action = append(s.Action, "Empty Y")
+		}
+
+		if state.X.Amount == 0 {
+			state.X.Amount = state.X.Capacity
+			s.Steps = append(s.Steps, state)
+			s.Action = append(s.Action, "Fill X")
+		}
+
+		toTransfer = min(state.X.Amount, state.Y.Capacity-state.Y.Amount)
+		state.X.Amount -= toTransfer
+		state.Y.Amount += toTransfer
+		s.Steps = append(s.Steps, state)
+		s.Action = append(s.Action, "Transfer to Y")
+	}
+
+	return s, nil
+}
+
+func min(x, y uint) uint {
+	if x < y {
+		return x
+	}
+	return y
 }
