@@ -208,6 +208,7 @@ func (a *App) requestPositiveNumber(message string) (int, error) {
 			if err != nil {
 				return 0, err
 			}
+			continue
 		}
 		return number, nil
 	}
@@ -232,6 +233,7 @@ func (a *App) requestNonNegativeNumber(message string) (int, error) {
 			if err != nil {
 				return 0, err
 			}
+			continue
 		}
 		return number, nil
 	}
