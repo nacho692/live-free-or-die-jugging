@@ -37,6 +37,8 @@
 // Step 3: If Y is full empty it
 // Step 5: Repeat from Step 1 until winning condition is met
 //
+// The proof of the algorithm is left as an exercise for the reader.
+//
 // There are problems with no solutions, for example
 // x=9, y=3, z=5
 //
@@ -48,34 +50,11 @@
 // cycling.
 package iterative
 
-import "errors"
+import (
+	"errors"
 
-var ErrNoSolution = errors.New("no solution")
-
-// State a State indicates the current state of the X and Y Jugs
-type State struct {
-	X Jug
-	Y Jug
-}
-
-type Step struct {
-	// State indicates the step after the action is taken
-	State State
-	// Action is a user-friendly string indicating the action taken, it is a
-	// free text.
-	Action string
-}
-
-type Solution struct {
-	// Steps are the series of steps required to arrive to the solution.
-	Steps []Step
-}
-
-// Jug a Jug carries a certain amount of water.
-type Jug struct {
-	Capacity int
-	Amount   int
-}
+	"github.com/nacho692/live-free-or-die-jugging/models"
+)
 
 type action string
 
@@ -85,80 +64,80 @@ const (
 	emptyFrom  action = "empty"
 )
 
-type step func(act action, from, to Jug)
+type step func(act action, from, to models.Jug)
 
 // Solve solves the water jugs riddle iteratively.
 //
 // An error ErrNoSolution is returned if no solution exists.
-func Solve(baseState State, z int) (Solution, error) {
+func Solve(baseState models.State, z int) (models.Solution, error) {
 
 	x := baseState.X.Capacity
 	y := baseState.Y.Capacity
 	if z > x && z > y {
-		return Solution{}, errors.New("z must be smaller than either x or y")
+		return models.Solution{}, errors.New("z must be smaller than either x or y")
 	}
 	if z < 0 {
-		return Solution{}, errors.New("z must be zero or greater")
+		return models.Solution{}, errors.New("z must be zero or greater")
 	}
 	if y <= 0 || x <= 0 {
-		return Solution{}, errors.New("both x and z must be positive")
+		return models.Solution{}, errors.New("both x and z must be positive")
 	}
 
 	// We derive two solutions, first pouring from X to Y, secondly from Y to X
 	// we keep the minimum of both
-	s1 := Solution{}
+	s1 := models.Solution{}
 	err := solveFromTo(
 		baseState.X,
 		baseState.Y,
 		// The callback adds a solution step, knowing that the From Jug is X
 		// and the To Jug is Y.
-		func(act action, from, to Jug) {
-			s := Step{
-				State: State{
+		func(act action, from, to models.Jug) {
+			s := models.Step{
+				State: models.State{
 					X: from,
 					Y: to,
 				},
 			}
 			switch act {
 			case fillTo:
-				s.Action = "Fill X"
+				s.Action = models.ActionFillX
 			case emptyFrom:
-				s.Action = "Empty Y"
+				s.Action = models.ActionEmptyY
 			case transferTo:
-				s.Action = "Transfer To Y"
+				s.Action = models.ActionTransferY
 			}
 			s1.Steps = append(s1.Steps, s)
 		},
 		z)
 
 	if err != nil {
-		return Solution{}, err
+		return models.Solution{}, err
 	}
 
-	s2 := Solution{}
+	s2 := models.Solution{}
 	err = solveFromTo(
 		baseState.Y,
 		baseState.X,
-		func(act action, from, to Jug) {
-			s := Step{
-				State: State{
+		func(act action, from, to models.Jug) {
+			s := models.Step{
+				State: models.State{
 					X: to,
 					Y: from,
 				},
 			}
 			switch act {
 			case fillTo:
-				s.Action = "Fill Y"
+				s.Action = models.ActionFillY
 			case emptyFrom:
-				s.Action = "Empty X"
+				s.Action = models.ActionEmptyX
 			case transferTo:
-				s.Action = "Transfer To X"
+				s.Action = models.ActionTransferX
 			}
 			s2.Steps = append(s2.Steps, s)
 		},
 		z)
 	if err != nil {
-		return Solution{}, err
+		return models.Solution{}, err
 	}
 
 	if len(s1.Steps) < len(s2.Steps) {
@@ -178,14 +157,14 @@ func Solve(baseState State, z int) (Solution, error) {
 // This callback allows and helps formatting the Solution correctly avoiding too
 // much code repetition.
 func solveFromTo(
-	from Jug, to Jug,
+	from models.Jug, to models.Jug,
 	newStep step,
 	z int) error {
 
 	toTransfer := 0
 
 	type tuple struct {
-		from, to Jug
+		from, to models.Jug
 	}
 	visitedTuples := map[tuple]bool{}
 	for from.Amount != z && to.Amount != z && !visitedTuples[tuple{from: from, to: to}] {
@@ -209,7 +188,7 @@ func solveFromTo(
 	}
 
 	if visitedTuples[tuple{from: from, to: to}] {
-		return ErrNoSolution
+		return models.ErrNoSolution
 	}
 	return nil
 }
