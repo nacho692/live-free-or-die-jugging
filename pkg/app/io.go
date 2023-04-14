@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strings"
 )
 
 type writer struct {
@@ -29,5 +30,9 @@ func (r reader) Read() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return input[:len(input)-1], nil
+	// unix delimiter
+	input = strings.TrimRight(input, "\n")
+	// windows delimiter
+	input = strings.TrimRight(input, "\r\n")
+	return input, nil
 }
