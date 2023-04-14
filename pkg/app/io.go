@@ -21,11 +21,11 @@ func (w writer) WriteLn(message string) error {
 }
 
 type reader struct {
-	input io.Reader
+	input *bufio.Reader
 }
 
 func (r reader) Read() (string, error) {
-	input, err := bufio.NewReader(r.input).ReadString('\n')
+	input, err := r.input.ReadString('\n')
 	if err != nil {
 		return "", err
 	}

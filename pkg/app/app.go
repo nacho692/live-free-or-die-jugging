@@ -2,6 +2,7 @@
 package app
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -53,7 +54,7 @@ func New(conf Configuration) (App, error) {
 	}
 
 	return App{
-		input:          reader{conf.Input},
+		input:          reader{bufio.NewReader(conf.Input)},
 		output:         writer{conf.Output},
 		solutionOutput: writer{conf.SolutionOutput},
 		solver:         conf.Solver,
@@ -99,7 +100,7 @@ func (a *App) Run() error {
 	}, z)
 
 	if err != nil && errors.Is(err, models.ErrNoSolution) {
-		return a.output.WriteLn(noSolution)
+		return a.solutionOutput.WriteLn(noSolution)
 	}
 	if err != nil {
 		return fmt.Errorf("finding solution: %w", err)
@@ -107,8 +108,8 @@ func (a *App) Run() error {
 
 	for _, step := range s.Steps {
 		err = a.solutionOutput.Write(
-			fmt.Sprintf("(%d, %d) \t %s \n",
-				step.State.X.Amount, step.State.Y.Amount, step.Action))
+			fmt.Sprintf("%s \t (%d, %d) \n",
+				step.Action, step.State.X.Amount, step.State.Y.Amount))
 		if err != nil {
 			return fmt.Errorf("writing solution to output: %w", err)
 		}
