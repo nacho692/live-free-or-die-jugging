@@ -149,6 +149,42 @@ func TestSolutions(t *testing.T) {
 		assert.Equal(t, expectedSolution, solution)
 	})
 
+	t.Run("just filling X should work", func(t *testing.T) {
+		solution, err := iterative.Solve(newBaseState(5, 4), 5)
+		require.NoError(t, err)
+		expectedSolution := models.Solution{
+			Steps: []models.Step{
+				{
+					State: models.State{
+						X: models.Jug{Capacity: 5, Amount: 5},
+						Y: models.Jug{Capacity: 4, Amount: 0},
+					},
+					Action: models.ActionFillX,
+				},
+			},
+		}
+
+		assert.Equal(t, expectedSolution, solution)
+	})
+
+	t.Run("just filling Y should work", func(t *testing.T) {
+		solution, err := iterative.Solve(newBaseState(4, 5), 5)
+		require.NoError(t, err)
+		expectedSolution := models.Solution{
+			Steps: []models.Step{
+				{
+					State: models.State{
+						X: models.Jug{Capacity: 4, Amount: 0},
+						Y: models.Jug{Capacity: 5, Amount: 5},
+					},
+					Action: models.ActionFillY,
+				},
+			},
+		}
+
+		assert.Equal(t, expectedSolution, solution)
+	})
+
 	t.Run("z = 0 should be measurable in 0 steps", func(t *testing.T) {
 
 		s, err := iterative.Solve(newBaseState(5, 3), 0)

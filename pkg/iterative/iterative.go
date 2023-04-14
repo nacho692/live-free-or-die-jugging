@@ -59,8 +59,8 @@ type action string
 
 const (
 	transferTo action = "transfer_to"
-	fillTo     action = "fill"
-	emptyFrom  action = "empty"
+	fillFrom   action = "fill"
+	emptyTo    action = "empty"
 )
 
 type step func(act action, from, to models.Jug)
@@ -98,9 +98,9 @@ func Solve(baseState models.State, z int) (models.Solution, error) {
 				},
 			}
 			switch act {
-			case fillTo:
+			case fillFrom:
 				s.Action = models.ActionFillX
-			case emptyFrom:
+			case emptyTo:
 				s.Action = models.ActionEmptyY
 			case transferTo:
 				s.Action = models.ActionTransferY
@@ -125,9 +125,9 @@ func Solve(baseState models.State, z int) (models.Solution, error) {
 				},
 			}
 			switch act {
-			case fillTo:
+			case fillFrom:
 				s.Action = models.ActionFillY
-			case emptyFrom:
+			case emptyTo:
 				s.Action = models.ActionEmptyX
 			case transferTo:
 				s.Action = models.ActionTransferX
@@ -160,11 +160,23 @@ func solveFromTo(
 	newStep step,
 	z int) error {
 
+	// If z is 0 we already have a solution, and that is doing nothing
+	if z == 0 {
+		return nil
+	}
+
 	toTransfer := 0
 
 	type tuple struct {
 		from, to models.Jug
 	}
+
+	// We start by filling the from.
+	// This allows checking for the winning condition, the only time this action
+	// "wins" is the first time we fill the from jug.
+	from.Amount = from.Capacity
+	newStep(fillFrom, from, to)
+
 	visitedTuples := map[tuple]bool{}
 	for from.Amount != z && to.Amount != z && !visitedTuples[tuple{from: from, to: to}] {
 
@@ -172,12 +184,12 @@ func solveFromTo(
 
 		if to.Amount == to.Capacity {
 			to.Amount = 0
-			newStep(emptyFrom, from, to)
+			newStep(emptyTo, from, to)
 		}
 
 		if from.Amount == 0 {
 			from.Amount = from.Capacity
-			newStep(fillTo, from, to)
+			newStep(fillFrom, from, to)
 		}
 
 		toTransfer = min(from.Amount, to.Capacity-to.Amount)
