@@ -155,6 +155,7 @@ func Solve(baseState models.State, z int) (models.Solution, error) {
 // is generated.
 // This callback allows and helps formatting the Solution correctly avoiding too
 // much code repetition.
+// Here with a more functional approach the solveFromTo could have returned the solution or error instead of doing side effects since it depends 100% on the step function. I understand that nobody outside this scope can break this but its a little hard to read
 func solveFromTo(
 	from models.Jug, to models.Jug,
 	newStep step,

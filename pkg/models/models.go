@@ -16,6 +16,7 @@ var ErrNoSolution = errors.New("no solution")
 // Action is a user-friendly text indicating the action taken
 type Action string
 
+// Maybe here we could just have actions like Fill, Transfer and Empty instead of one per each, anyways doing that this way is really explicit about the scope of the solver, that only supports 2 jugs and a result
 const (
 	ActionFillX     = "Fill X"
 	ActionFillY     = "Fill Y"

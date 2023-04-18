@@ -31,6 +31,7 @@ type Solver interface {
 	Solve(state models.State, z int) (models.Solution, error)
 }
 
+// here the name of this struct is weird, since when I read configuration I just expect like serializable information, not objects with behavior as the reader, writer or solver, but its good to have a struct to simplify the initialization, the bad thing, as is a struct it created an unnnecesary dependency in the initializer
 // Configuration is the base configuration for instantiating an interactive App.
 type Configuration struct {
 	// Output allows configuration for the app output, if nil, stdout is used
@@ -189,6 +190,7 @@ func (a *App) validateParameters(x, y, z int) (bool, error) {
 	return true, nil
 }
 
+// requestPositiveNumber and requestNonNegativeNumber are almost the same, this can be simplified to avoid problems when refactoring o modifications
 func (a *App) requestPositiveNumber(message string) (int, error) {
 
 	for {

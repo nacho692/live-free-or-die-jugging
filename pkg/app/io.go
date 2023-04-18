@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// I don't understand the need of this wrapper, its just a helper to convert []byte to string, nothing really serious, just unnecesary complexity
 type writer struct {
 	output io.Writer
 }
